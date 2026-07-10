@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String             @id @default(uuid())
+  email        String             @unique
+  name         String
+  passwordHash String?            @map("password_hash")
+  googleId     String?            @unique @map("google_id")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  profile      Profile?
+  waterEntries WaterEntry[]
+  reminders    ReminderSettings?
+  pushSubs     PushSubscription[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique @map("user_id")
+  name               String
+  weight             Float
+  gender             String
+  activityLevel      String   @map("activity_level")
+  wakeTime           String   @default("07:00") @map("wake_time")
+  sleepTime          String   @default("23:00") @map("sleep_time")
+  dailyGoal          Int      @map("daily_goal")
+  manualGoalOverride Boolean  @default(false) @map("manual_goal_override")
+  unitSystem         String   @default("metric") @map("unit_system")
+  theme              String   @default("dark")
+  onboardingComplete Boolean  @default(false) @map("onboarding_complete")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model WaterEntry {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  amount    Int
+  timestamp DateTime
+  date      String
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@map("water_entries")
+}
+
+model ReminderSettings {
+  id              String    @id @default(uuid())
+  userId          String    @unique @map("user_id")
+  enabled         Boolean   @default(true)
+  fixedInterval   Boolean   @default(true) @map("fixed_interval")
+  intervalMinutes Int       @default(60) @map("interval_minutes")
+  morningBoost    Boolean   @default(true) @map("morning_boost")
+  postMeal        Boolean   @default(true) @map("post_meal")
+  eveningWinddown Boolean   @default(true) @map("evening_winddown")
+  dndEnabled      Boolean   @default(false) @map("dnd_enabled")
+  dndStart        String    @default("22:00") @map("dnd_start")
+  dndEnd          String    @default("07:00") @map("dnd_end")
+  lastPushAt      DateTime? @map("last_push_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reminder_settings")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}

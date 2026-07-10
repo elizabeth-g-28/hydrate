@@ -5,17 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:db": "docker compose up -d",
+    "dev:backend": "npm run dev --prefix backend",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "build:backend": "npm run build --prefix backend",
+    "lint": "eslint . --max-warnings 0 --format stylish",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc -b --pretty && npm run typecheck --prefix backend",
+    "check": "npm run typecheck && npm run lint",
     "preview": "vite preview"
   },
   "dependencies": {
-    "dexie": "^4.3.0",
+    "@react-oauth/google": "^0.13.5",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.18.1",
     "recharts": "^3.7.0",
     "vite-plugin-pwa": "^0.20.5",
+    "workbox-precaching": "^7.4.0",
     "workbox-window": "^7.4.0",
     "zustand": "^5.0.11"
   },

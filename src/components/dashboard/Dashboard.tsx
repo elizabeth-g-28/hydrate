@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Minus, Plus, Droplets } from 'lucide-react';
 import { useProfileStore } from '../../stores/useProfileStore';
 import { useWaterStore } from '../../stores/useWaterStore';
@@ -14,14 +14,10 @@ import { PRESET_AMOUNTS } from '../../types';
 
 export const Dashboard = () => {
   const profile = useProfileStore((s) => s.profile);
-  const { todayEntries, todayTotal, addEntry, removeEntry, loadTodayData, lastLogAnimation } =
+  const { todayEntries, todayTotal, addEntry, removeEntry, lastLogAnimation } =
     useWaterStore();
   const [customAmount, setCustomAmount] = useState(250);
   const [rippleKey, setRippleKey] = useState(0);
-
-  useEffect(() => {
-    loadTodayData();
-  }, [loadTodayData]);
 
   if (!profile) return null;
 
@@ -42,10 +38,8 @@ export const Dashboard = () => {
     }
   };
 
-  const handleRemoveEntry = async (id: number | undefined) => {
-    if (id !== undefined) {
-      await removeEntry(id);
-    }
+  const handleRemoveEntry = async (id: string) => {
+    await removeEntry(id);
   };
 
   return (

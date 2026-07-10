@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Calendar, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProfileStore } from '../../stores/useProfileStore';
-import { db } from '../../db';
+import { getWaterEntries } from '../../lib/api';
 import { formatAmount, formatTime, getDateString, getDayLabel } from '../../utils/hydration';
 import type { WaterEntry } from '../../types';
 
@@ -23,17 +23,26 @@ export const HistoryView = () => {
     const startOfWeek = new Date(today);
     startOfWeek.setDate(startOfWeek.getDate() - 6 + weekOffset * 7);
 
+    const dates: string[] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(d.getDate() + i);
-      const dateStr = getDateString(d);
-      const entries = await db.waterEntries
-        .where('date')
-        .equals(dateStr)
-        .sortBy('timestamp');
-      const total = entries.reduce((sum, e) => sum + e.amount, 0);
-      days.push({ date: dateStr, entries, total });
+      dates.push(getDateString(d));
     }
+
+    const { entries } = await getWaterEntries({
+      from: dates[0],
+      to: dates[dates.length - 1],
+    });
+
+    for (const dateStr of dates) {
+      const dayEntries = entries
+        .filter((e) => e.date === dateStr)
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      const total = dayEntries.reduce((sum, e) => sum + e.amount, 0);
+      days.push({ date: dateStr, entries: dayEntries, total });
+    }
+
     setWeekData(days);
   }, [weekOffset]);
 
@@ -46,10 +55,16 @@ export const HistoryView = () => {
   const { dailyGoal, unitSystem } = profile;
   const selectedDayData = weekData.find((d) => d.date === selectedDay);
   const maxTotal = Math.max(dailyGoal, ...weekData.map((d) => d.total));
+  const chartHeight = 128;
+
+  const getBarHeightPx = (total: number): number => {
+    if (total === 0) return 4;
+    if (maxTotal === 0) return 4;
+    return Math.max(4, (total / maxTotal) * chartHeight);
+  };
 
   return (
     <div className="px-4 pb-24 pt-6 max-w-lg mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Calendar size={20} className="text-hydro-accent" />
@@ -79,11 +94,15 @@ export const HistoryView = () => {
         </div>
       </div>
 
-      {/* Week Bar Chart */}
       <div className="glass-card p-4 mb-6">
-        <div className="flex items-end justify-between gap-2 h-40">
+        <div className="relative" style={{ height: chartHeight }}>
+          <div
+            className="absolute left-0 right-0 border-t border-dashed border-hydro-accent/30 pointer-events-none z-10"
+            style={{ bottom: maxTotal > 0 ? (dailyGoal / maxTotal) * chartHeight : 0 }}
+          />
+          <div className="flex items-end justify-between gap-2 h-full">
           {weekData.map((day) => {
-            const barHeight = maxTotal > 0 ? (day.total / maxTotal) * 100 : 0;
+            const barHeightPx = getBarHeightPx(day.total);
             const goalMet = day.total >= dailyGoal;
             const isSelected = day.date === selectedDay;
 
@@ -93,21 +112,21 @@ export const HistoryView = () => {
                 onClick={() => setSelectedDay(day.date)}
                 tabIndex={0}
                 aria-label={`${getDayLabel(day.date)}: ${formatAmount(day.total, unitSystem)}`}
-                className={`flex-1 flex flex-col items-center gap-1 group cursor-pointer`}
+                className="flex-1 flex flex-col items-center gap-1 h-full min-h-0 group cursor-pointer"
               >
-                <span className="text-[10px] text-hydro-text-muted font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[10px] text-hydro-text-muted font-medium h-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   {formatAmount(day.total, unitSystem)}
                 </span>
-                <div className="w-full flex flex-col items-center">
+                <div className="flex-1 w-full flex items-end justify-center min-h-0">
                   <div
                     className={`w-full max-w-[32px] rounded-t-lg transition-all duration-500 ${
                       goalMet ? 'bg-hydro-accent' : 'bg-hydro-accent/40'
                     } ${isSelected ? 'ring-2 ring-hydro-accent ring-offset-2 ring-offset-hydro-card' : ''}`}
-                    style={{ height: `${Math.max(barHeight, 4)}%`, minHeight: '4px' }}
+                    style={{ height: barHeightPx }}
                   />
                 </div>
                 <span
-                  className={`text-xs font-medium mt-1 ${
+                  className={`text-xs font-medium ${
                     isSelected ? 'text-hydro-accent' : 'text-hydro-text-muted'
                   }`}
                 >
@@ -116,17 +135,10 @@ export const HistoryView = () => {
               </button>
             );
           })}
-        </div>
-        {/* Goal line */}
-        <div className="relative mt-1">
-          <div
-            className="absolute left-0 right-0 border-t border-dashed border-hydro-accent/30"
-            style={{ bottom: `${(dailyGoal / maxTotal) * 100}%` }}
-          />
+          </div>
         </div>
       </div>
 
-      {/* Selected Day Detail */}
       {selectedDayData && (
         <div className="glass-card p-4 animate-slide-up">
           <div className="flex items-center justify-between mb-4">
@@ -141,7 +153,6 @@ export const HistoryView = () => {
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="w-full h-2 bg-hydro-bg rounded-full mb-4 overflow-hidden">
             <div
               className="h-full bg-hydro-accent rounded-full transition-all duration-500"

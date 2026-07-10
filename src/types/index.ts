@@ -13,7 +13,6 @@ export type ReminderType = 'fixed_interval' | 'morning_boost' | 'post_meal' | 'p
 export interface UserProfile {
   id: string;
   name: string;
-  age: number;
   weight: number; // in kg
   gender: Gender;
   activityLevel: ActivityLevel;
@@ -29,7 +28,7 @@ export interface UserProfile {
 }
 
 export interface WaterEntry {
-  id?: number;
+  id: string;
   amount: number; // in ml
   timestamp: string; // ISO string
   date: string; // YYYY-MM-DD

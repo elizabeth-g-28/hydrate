@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Droplets, User, Activity, Bell, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useProfileStore, createDefaultProfile } from '../../stores/useProfileStore';
+import { useReminderStore } from '../../stores/useReminderStore';
 import { calculateDailyGoal, formatAmount } from '../../utils/hydration';
-import { requestNotificationPermission } from '../../utils/notifications';
+import { subscribeToPush } from '../../utils/notifications';
 import type { Gender, ActivityLevel, UserProfile } from '../../types';
 import { ACTIVITY_OPTIONS, ACTIVITY_MULTIPLIERS } from '../../types';
 
@@ -10,7 +12,9 @@ const STEPS = ['welcome', 'profile', 'activity', 'notifications'] as const;
 type Step = (typeof STEPS)[number];
 
 export const Onboarding = () => {
+  const navigate = useNavigate();
   const setProfile = useProfileStore((s) => s.setProfile);
+  const updateSettings = useReminderStore((s) => s.updateSettings);
   const [step, setStep] = useState<Step>('welcome');
   const [draft, setDraft] = useState<Partial<UserProfile>>(createDefaultProfile());
 
@@ -29,7 +33,10 @@ export const Onboarding = () => {
   };
 
   const handleComplete = async () => {
-    await requestNotificationPermission();
+    const subscribed = await subscribeToPush();
+    if (subscribed) {
+      updateSettings({ enabled: true, fixedInterval: true });
+    }
     const goal = calculateDailyGoal(
       draft.weight ?? 70,
       draft.activityLevel ?? 'moderate'
@@ -41,6 +48,7 @@ export const Onboarding = () => {
       onboardingComplete: true,
     };
     setProfile(profile);
+    navigate('/home', { replace: true });
   };
 
   const updateDraft = (updates: Partial<UserProfile>) => {
@@ -150,31 +158,17 @@ const ProfileStep = ({ draft, onUpdate }: StepProps) => (
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="age" className="block text-sm font-medium text-hydro-text-muted mb-1.5">Age</label>
-          <input
-            id="age"
-            type="number"
-            value={draft.age ?? 25}
-            onChange={(e) => onUpdate({ age: Number(e.target.value) })}
-            min={10}
-            max={120}
-            className="w-full px-4 py-3 rounded-xl bg-hydro-card border border-hydro-border text-hydro-text focus:outline-none focus:ring-2 focus:ring-hydro-accent/50 transition-shadow"
-          />
-        </div>
-        <div>
-          <label htmlFor="weight" className="block text-sm font-medium text-hydro-text-muted mb-1.5">Weight (kg)</label>
-          <input
-            id="weight"
-            type="number"
-            value={draft.weight ?? 70}
-            onChange={(e) => onUpdate({ weight: Number(e.target.value) })}
-            min={20}
-            max={300}
-            className="w-full px-4 py-3 rounded-xl bg-hydro-card border border-hydro-border text-hydro-text focus:outline-none focus:ring-2 focus:ring-hydro-accent/50 transition-shadow"
-          />
-        </div>
+      <div>
+        <label htmlFor="weight" className="block text-sm font-medium text-hydro-text-muted mb-1.5">Weight (kg)</label>
+        <input
+          id="weight"
+          type="number"
+          value={draft.weight ?? 70}
+          onChange={(e) => onUpdate({ weight: Number(e.target.value) })}
+          min={20}
+          max={300}
+          className="w-full px-4 py-3 rounded-xl bg-hydro-card border border-hydro-border text-hydro-text focus:outline-none focus:ring-2 focus:ring-hydro-accent/50 transition-shadow"
+        />
       </div>
 
       <div>

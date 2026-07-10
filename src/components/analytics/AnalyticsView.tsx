@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { BarChart3, Flame, Trophy, TrendingUp } from 'lucide-react';
 import {
   BarChart,
@@ -23,22 +23,12 @@ interface ChartData {
 
 export const AnalyticsView = () => {
   const profile = useProfileStore((s) => s.profile);
-  const { weekSummaries, loadWeekData, getStreak, getTotalDaysTracked, todayTotal } = useWaterStore();
-  const [streak, setStreak] = useState(0);
-  const [totalDays, setTotalDays] = useState(0);
-
-  const loadAnalytics = useCallback(async () => {
-    if (!profile) return;
-    await loadWeekData(profile.dailyGoal);
-    const s = await getStreak(profile.dailyGoal);
-    const d = await getTotalDaysTracked();
-    setStreak(s);
-    setTotalDays(d);
-  }, [profile, loadWeekData, getStreak, getTotalDaysTracked]);
+  const { weekSummaries, streak, totalDays, todayTotal, loadAnalyticsStats } = useWaterStore();
 
   useEffect(() => {
-    loadAnalytics();
-  }, [loadAnalytics, todayTotal]);
+    if (!profile) return;
+    void loadAnalyticsStats(profile.dailyGoal);
+  }, [profile, loadAnalyticsStats]);
 
   if (!profile) return null;
 
@@ -57,7 +47,6 @@ export const AnalyticsView = () => {
 
   const goalMetDays = weekSummaries.filter((s) => s.goalMet).length;
 
-  // Check unlocked achievements
   const unlockedAchievements = ACHIEVEMENTS_LIST.filter((a) => {
     if (a.type === 'streak') return streak >= a.requirement;
     if (a.type === 'total_days') return totalDays >= a.requirement;
@@ -71,13 +60,11 @@ export const AnalyticsView = () => {
 
   return (
     <div className="px-4 pb-24 pt-6 max-w-lg mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <BarChart3 size={20} className="text-hydro-accent" />
         <h1 className="text-xl font-bold text-white">Analytics</h1>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="glass-card p-3 text-center">
           <Flame size={20} className="mx-auto mb-1 text-orange-400" />
@@ -96,7 +83,6 @@ export const AnalyticsView = () => {
         </div>
       </div>
 
-      {/* Weekly Chart */}
       <div className="glass-card p-4 mb-6">
         <h2 className="text-sm font-semibold text-hydro-text-muted mb-4 uppercase tracking-wide">
           Last 7 Days
@@ -145,7 +131,6 @@ export const AnalyticsView = () => {
         </div>
       </div>
 
-      {/* Achievements */}
       <div className="glass-card p-4">
         <h2 className="text-sm font-semibold text-hydro-text-muted mb-4 uppercase tracking-wide">
           Achievements ({unlockedAchievements.length}/{ACHIEVEMENTS_LIST.length})
