@@ -9,10 +9,17 @@ import {
 } from '../lib/api';
 import { isApiEnabled } from '../lib/auth';
 
+export interface HistoryDayData {
+  date: string;
+  entries: WaterEntry[];
+  total: number;
+}
+
 interface WaterState {
   todayEntries: WaterEntry[];
   todayTotal: number;
   weekSummaries: DailySummary[];
+  historyWeek: HistoryDayData[];
   streak: number;
   totalDays: number;
   isLoading: boolean;
@@ -21,6 +28,7 @@ interface WaterState {
   removeEntry: (id: string) => Promise<void>;
   loadTodayData: () => Promise<void>;
   loadWeekData: (goal: number) => Promise<void>;
+  loadHistoryWeek: (weekOffset: number) => Promise<void>;
   loadAnalyticsStats: (goal: number) => Promise<void>;
   getStreak: (goal: number) => Promise<number>;
   getTotalDaysTracked: () => Promise<number>;
@@ -56,6 +64,7 @@ export const useWaterStore = create<WaterState>()((set, get) => ({
   todayEntries: [],
   todayTotal: 0,
   weekSummaries: [],
+  historyWeek: [],
   streak: 0,
   totalDays: 0,
   isLoading: false,
@@ -115,6 +124,36 @@ export const useWaterStore = create<WaterState>()((set, get) => ({
       };
     });
     set({ weekSummaries: summaries });
+  },
+
+  loadHistoryWeek: async (weekOffset) => {
+    if (!isApiEnabled()) return;
+
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(startOfWeek.getDate() - 6 + weekOffset * 7);
+
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startOfWeek);
+      d.setDate(d.getDate() + i);
+      dates.push(getDateString(d));
+    }
+
+    const { entries } = await getWaterEntries({
+      from: dates[0],
+      to: dates[dates.length - 1],
+    });
+
+    const days: HistoryDayData[] = dates.map((dateStr) => {
+      const dayEntries = entries
+        .filter((e) => e.date === dateStr)
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      const total = dayEntries.reduce((sum, e) => sum + e.amount, 0);
+      return { date: dateStr, entries: dayEntries, total };
+    });
+
+    set({ historyWeek: days });
   },
 
   loadAnalyticsStats: async (goal) => {

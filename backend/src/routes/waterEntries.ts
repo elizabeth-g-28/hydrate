@@ -88,7 +88,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
 
 router.delete("/:id", requireAuth, async (req: Request, res: Response) => {
   const userId = req.user!.userId;
-  const { id } = req.params;
+  const id = String(req.params.id);
 
   const entry = await prisma.waterEntry.findFirst({ where: { id, userId } });
   if (!entry) {

@@ -1,60 +1,24 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useProfileStore } from '../../stores/useProfileStore';
-import { getWaterEntries } from '../../lib/api';
+import { useWaterStore } from '../../stores/useWaterStore';
 import { formatAmount, formatTime, getDateString, getDayLabel } from '../../utils/hydration';
-import type { WaterEntry } from '../../types';
-
-interface DayData {
-  date: string;
-  entries: WaterEntry[];
-  total: number;
-}
 
 export const HistoryView = () => {
   const profile = useProfileStore((s) => s.profile);
+  const { historyWeek, loadHistoryWeek } = useWaterStore();
   const [weekOffset, setWeekOffset] = useState(0);
-  const [weekData, setWeekData] = useState<DayData[]>([]);
   const [selectedDay, setSelectedDay] = useState<string>(getDateString());
 
-  const loadWeekData = useCallback(async () => {
-    const days: DayData[] = [];
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(startOfWeek.getDate() - 6 + weekOffset * 7);
-
-    const dates: string[] = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(startOfWeek);
-      d.setDate(d.getDate() + i);
-      dates.push(getDateString(d));
-    }
-
-    const { entries } = await getWaterEntries({
-      from: dates[0],
-      to: dates[dates.length - 1],
-    });
-
-    for (const dateStr of dates) {
-      const dayEntries = entries
-        .filter((e) => e.date === dateStr)
-        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-      const total = dayEntries.reduce((sum, e) => sum + e.amount, 0);
-      days.push({ date: dateStr, entries: dayEntries, total });
-    }
-
-    setWeekData(days);
-  }, [weekOffset]);
-
   useEffect(() => {
-    loadWeekData();
-  }, [loadWeekData]);
+    void loadHistoryWeek(weekOffset);
+  }, [weekOffset, loadHistoryWeek]);
 
   if (!profile) return null;
 
   const { dailyGoal, unitSystem } = profile;
-  const selectedDayData = weekData.find((d) => d.date === selectedDay);
-  const maxTotal = Math.max(dailyGoal, ...weekData.map((d) => d.total));
+  const selectedDayData = historyWeek.find((d) => d.date === selectedDay);
+  const maxTotal = Math.max(dailyGoal, ...historyWeek.map((d) => d.total));
   const chartHeight = 128;
 
   const getBarHeightPx = (total: number): number => {
@@ -101,7 +65,7 @@ export const HistoryView = () => {
             style={{ bottom: maxTotal > 0 ? (dailyGoal / maxTotal) * chartHeight : 0 }}
           />
           <div className="flex items-end justify-between gap-2 h-full">
-          {weekData.map((day) => {
+          {historyWeek.map((day) => {
             const barHeightPx = getBarHeightPx(day.total);
             const goalMet = day.total >= dailyGoal;
             const isSelected = day.date === selectedDay;

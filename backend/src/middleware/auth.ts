@@ -1,13 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyAccessToken, TokenPayload } from "../lib/jwt";
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: TokenPayload;
-    }
-  }
-}
+import { verifyAccessToken } from "../lib/jwt";
 
 export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
