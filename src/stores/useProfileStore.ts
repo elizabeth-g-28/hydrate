@@ -25,6 +25,7 @@ const DEFAULT_PROFILE: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> = {
   manualGoalOverride: false,
   unitSystem: 'metric' as UnitSystem,
   theme: 'dark' as Theme,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   onboardingComplete: false,
 };
 

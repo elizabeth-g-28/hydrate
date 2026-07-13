@@ -8,7 +8,7 @@ export type Theme = 'dark' | 'light';
 
 export type HydrationStatus = 'dehydrated' | 'under_hydrated' | 'well_hydrated' | 'over_hydrated';
 
-export type ReminderType = 'fixed_interval' | 'morning_boost' | 'post_meal' | 'pre_workout' | 'evening_winddown';
+export type ReminderType = 'fixed_interval' | 'morning_boost' | 'evening_winddown';
 
 export interface UserProfile {
   id: string;
@@ -22,6 +22,7 @@ export interface UserProfile {
   manualGoalOverride: boolean;
   unitSystem: UnitSystem;
   theme: Theme;
+  timezone: string;
   onboardingComplete: boolean;
   createdAt: string;
   updatedAt: string;
@@ -48,7 +49,6 @@ export interface ReminderSettings {
   fixedInterval: boolean;
   intervalMinutes: number;
   morningBoost: boolean;
-  postMeal: boolean;
   eveningWinddown: boolean;
   dndEnabled: boolean;
   dndStart: string; // HH:mm

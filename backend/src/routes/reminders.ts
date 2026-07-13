@@ -9,7 +9,6 @@ const toReminderResponse = (settings: {
   fixedInterval: boolean;
   intervalMinutes: number;
   morningBoost: boolean;
-  postMeal: boolean;
   eveningWinddown: boolean;
   dndEnabled: boolean;
   dndStart: string;
@@ -19,7 +18,6 @@ const toReminderResponse = (settings: {
   fixedInterval: settings.fixedInterval,
   intervalMinutes: settings.intervalMinutes,
   morningBoost: settings.morningBoost,
-  postMeal: settings.postMeal,
   eveningWinddown: settings.eveningWinddown,
   dndEnabled: settings.dndEnabled,
   dndStart: settings.dndStart,
@@ -38,7 +36,6 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
         fixedInterval: true,
         intervalMinutes: 60,
         morningBoost: true,
-        postMeal: true,
         eveningWinddown: true,
         dndEnabled: false,
         dndStart: "22:00",
@@ -58,7 +55,6 @@ router.put("/", requireAuth, async (req: Request, res: Response) => {
     fixedInterval,
     intervalMinutes,
     morningBoost,
-    postMeal,
     eveningWinddown,
     dndEnabled,
     dndStart,
@@ -73,7 +69,6 @@ router.put("/", requireAuth, async (req: Request, res: Response) => {
       fixedInterval: fixedInterval ?? true,
       intervalMinutes: intervalMinutes ?? 60,
       morningBoost: morningBoost ?? true,
-      postMeal: postMeal ?? true,
       eveningWinddown: eveningWinddown ?? true,
       dndEnabled: dndEnabled ?? false,
       dndStart: dndStart ?? "22:00",
@@ -84,7 +79,6 @@ router.put("/", requireAuth, async (req: Request, res: Response) => {
       ...(fixedInterval !== undefined && { fixedInterval }),
       ...(intervalMinutes !== undefined && { intervalMinutes }),
       ...(morningBoost !== undefined && { morningBoost }),
-      ...(postMeal !== undefined && { postMeal }),
       ...(eveningWinddown !== undefined && { eveningWinddown }),
       ...(dndEnabled !== undefined && { dndEnabled }),
       ...(dndStart !== undefined && { dndStart }),

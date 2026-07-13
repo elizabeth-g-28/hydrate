@@ -16,6 +16,7 @@ const toProfileResponse = (profile: {
   manualGoalOverride: boolean;
   unitSystem: string;
   theme: string;
+  timezone: string;
   onboardingComplete: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +32,7 @@ const toProfileResponse = (profile: {
   manualGoalOverride: profile.manualGoalOverride,
   unitSystem: profile.unitSystem,
   theme: profile.theme,
+  timezone: profile.timezone,
   onboardingComplete: profile.onboardingComplete,
   createdAt: profile.createdAt.toISOString(),
   updatedAt: profile.updatedAt.toISOString(),
@@ -62,6 +64,7 @@ router.put("/", requireAuth, async (req: Request, res: Response) => {
     manualGoalOverride,
     unitSystem,
     theme,
+    timezone,
     onboardingComplete,
   } = req.body;
 
@@ -79,6 +82,7 @@ router.put("/", requireAuth, async (req: Request, res: Response) => {
       manualGoalOverride: manualGoalOverride ?? false,
       unitSystem: unitSystem ?? "metric",
       theme: theme ?? "dark",
+      timezone: timezone ?? "UTC",
       onboardingComplete: onboardingComplete ?? false,
     },
     update: {
@@ -92,6 +96,7 @@ router.put("/", requireAuth, async (req: Request, res: Response) => {
       ...(manualGoalOverride !== undefined && { manualGoalOverride }),
       ...(unitSystem !== undefined && { unitSystem }),
       ...(theme !== undefined && { theme }),
+      ...(timezone !== undefined && { timezone }),
       ...(onboardingComplete !== undefined && { onboardingComplete }),
     },
   });

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import {
   User,
   Bell,
@@ -66,11 +67,10 @@ export const SettingsView = () => {
           value={profile.name}
           onChange={(v) => updateProfile({ name: v })}
         />
-        <SettingsInput
-          label="Weight (kg)"
-          type="number"
-          value={String(profile.weight)}
-          onChange={(v) => updateProfile({ weight: Number(v) })}
+        <WeightInput
+          key={profile.id}
+          initialWeight={profile.weight}
+          onCommit={(weight) => updateProfile({ weight })}
         />
         <div>
           <label className="block text-xs text-hydro-text-muted mb-1.5 font-medium">Gender</label>
@@ -237,11 +237,6 @@ export const SettingsView = () => {
               onChange={(v) => updateSettings({ morningBoost: v })}
             />
             <ToggleRow
-              label="Post-Meal Reminders"
-              enabled={settings.postMeal}
-              onChange={(v) => updateSettings({ postMeal: v })}
-            />
-            <ToggleRow
               label="Evening Wind-down"
               enabled={settings.eveningWinddown}
               onChange={(v) => updateSettings({ eveningWinddown: v })}
@@ -359,20 +354,51 @@ const SettingsSection = ({ icon: Icon, title, children }: SettingsSectionProps) 
   </div>
 );
 
+interface WeightInputProps {
+  initialWeight: number;
+  onCommit: (weight: number) => void;
+}
+
+const WeightInput = ({ initialWeight, onCommit }: WeightInputProps) => {
+  const [weightText, setWeightText] = useState(String(initialWeight));
+
+  const handleWeightBlur = () => {
+    const parsed = Number(weightText);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setWeightText(String(initialWeight));
+      return;
+    }
+    setWeightText(String(parsed));
+    onCommit(parsed);
+  };
+
+  return (
+    <SettingsInput
+      label="Weight (kg)"
+      type="number"
+      value={weightText}
+      onChange={setWeightText}
+      onBlur={handleWeightBlur}
+    />
+  );
+};
+
 interface SettingsInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   type?: string;
 }
 
-const SettingsInput = ({ label, value, onChange, type = 'text' }: SettingsInputProps) => (
+const SettingsInput = ({ label, value, onChange, onBlur, type = 'text' }: SettingsInputProps) => (
   <div>
     <label className="block text-xs text-hydro-text-muted mb-1.5 font-medium">{label}</label>
     <input
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
       className="w-full px-3 py-2 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-sm focus:outline-none focus:ring-2 focus:ring-hydro-accent/50 transition-shadow"
     />
   </div>

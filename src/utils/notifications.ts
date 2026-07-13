@@ -18,8 +18,8 @@ export const sendNotification = (title: string, body: string, tag?: string): voi
 
   new Notification(title, {
     body,
-    icon: '/favicon.svg',
-    badge: '/favicon.svg',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
     tag: tag ?? 'hydro-reminder',
     requireInteraction: false,
   });

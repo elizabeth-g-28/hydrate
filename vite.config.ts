@@ -19,7 +19,7 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon-48.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'logo-mark.png'],
       manifest: {
         name: 'Hydrate - Water Intake Tracker',
         short_name: 'Hydrate',

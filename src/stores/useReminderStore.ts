@@ -15,7 +15,6 @@ const DEFAULT_SETTINGS: ReminderSettings = {
   fixedInterval: true,
   intervalMinutes: 60,
   morningBoost: true,
-  postMeal: true,
   eveningWinddown: true,
   dndEnabled: false,
   dndStart: '22:00',

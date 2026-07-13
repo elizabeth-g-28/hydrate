@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Minus, Plus, Droplets } from 'lucide-react';
 import { useProfileStore } from '../../stores/useProfileStore';
 import { useWaterStore } from '../../stores/useWaterStore';
@@ -17,7 +17,8 @@ export const Dashboard = () => {
   const { todayEntries, todayTotal, addEntry, removeEntry, lastLogAnimation } =
     useWaterStore();
   const [customAmount, setCustomAmount] = useState(250);
-  const [rippleKey, setRippleKey] = useState(0);
+  const [ripple, setRipple] = useState<{ amount: number; key: number } | null>(null);
+  const rippleKeyRef = useRef(0);
 
   if (!profile) return null;
 
@@ -27,13 +28,13 @@ export const Dashboard = () => {
   const status = getHydrationStatus(todayTotal, dailyGoal);
 
   const handleQuickLog = async (amount: number) => {
-    setRippleKey((k) => k + 1);
+    rippleKeyRef.current += 1;
+    setRipple({ amount, key: rippleKeyRef.current });
     await addEntry(amount);
   };
 
   const handleCustomLog = async () => {
     if (customAmount > 0) {
-      setRippleKey((k) => k + 1);
       await addEntry(customAmount);
     }
   };
@@ -101,9 +102,9 @@ export const Dashboard = () => {
               <span className="text-xs font-semibold text-hydro-text">
                 {formatAmount(amount, unitSystem)}
               </span>
-              {rippleKey > 0 && (
+              {ripple?.amount === amount && (
                 <span
-                  key={`ripple-${amount}-${rippleKey}`}
+                  key={`ripple-${amount}-${ripple.key}`}
                   className="absolute inset-0 bg-hydro-accent/20 rounded-xl animate-ripple pointer-events-none"
                 />
               )}
@@ -124,15 +125,17 @@ export const Dashboard = () => {
           >
             <Minus size={16} className="text-hydro-text" />
           </button>
-          <div className="flex-1 text-center">
+          <div className="flex-1 flex items-baseline justify-center gap-1.5">
             <input
               type="number"
               value={customAmount}
               onChange={(e) => setCustomAmount(Math.max(0, Number(e.target.value)))}
-              className="w-24 text-center text-xl font-bold bg-transparent text-white focus:outline-none"
+              className="w-20 text-center text-xl font-bold bg-transparent text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               aria-label="Custom amount in milliliters"
             />
-            <p className="text-xs text-hydro-text-muted">{unitSystem === 'imperial' ? 'oz' : 'ml'}</p>
+            <span className="text-sm text-hydro-text-muted">
+              {unitSystem === 'imperial' ? 'oz' : 'ml'}
+            </span>
           </div>
           <button
             onClick={() => setCustomAmount((a) => a + 50)}

@@ -44,6 +44,7 @@ export const Onboarding = () => {
     const profile: UserProfile = {
       ...(createDefaultProfile()),
       ...draft,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       dailyGoal: goal,
       onboardingComplete: true,
     };
@@ -133,7 +134,32 @@ interface StepProps {
   onUpdate: (updates: Partial<UserProfile>) => void;
 }
 
-const ProfileStep = ({ draft, onUpdate }: StepProps) => (
+const ProfileStep = ({ draft, onUpdate }: StepProps) => {
+  const [weightText, setWeightText] = useState(
+    draft.weight != null ? String(draft.weight) : '70'
+  );
+
+  const handleWeightChange = (raw: string) => {
+    setWeightText(raw);
+    if (raw.trim() === '') return;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) return;
+    onUpdate({ weight: parsed });
+  };
+
+  const handleWeightBlur = () => {
+    const parsed = Number(weightText);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      const fallback = draft.weight ?? 70;
+      setWeightText(String(fallback));
+      onUpdate({ weight: fallback });
+      return;
+    }
+    setWeightText(String(parsed));
+    onUpdate({ weight: parsed });
+  };
+
+  return (
   <div>
     <div className="flex items-center gap-3 mb-6">
       <div className="w-10 h-10 rounded-full bg-hydro-accent/10 flex items-center justify-center">
@@ -163,8 +189,9 @@ const ProfileStep = ({ draft, onUpdate }: StepProps) => (
         <input
           id="weight"
           type="number"
-          value={draft.weight ?? 70}
-          onChange={(e) => onUpdate({ weight: Number(e.target.value) })}
+          value={weightText}
+          onChange={(e) => handleWeightChange(e.target.value)}
+          onBlur={handleWeightBlur}
           min={20}
           max={300}
           className="w-full px-4 py-3 rounded-xl bg-hydro-card border border-hydro-border text-hydro-text focus:outline-none focus:ring-2 focus:ring-hydro-accent/50 transition-shadow"
@@ -193,7 +220,8 @@ const ProfileStep = ({ draft, onUpdate }: StepProps) => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const ActivityStep = ({ draft, onUpdate }: StepProps) => {
   const weight = draft.weight ?? 70;

@@ -27,7 +27,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(title, {
       body,
       icon: '/icon-192.png',
-      badge: '/favicon.svg',
+      badge: '/icon-192.png',
       tag: 'hydro-reminder',
       data: { url },
     })

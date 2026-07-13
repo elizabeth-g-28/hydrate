@@ -54,7 +54,11 @@ export const getDateString = (date: Date = new Date()): string => {
 };
 
 export const formatTime = (isoString: string): string => {
-  return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return new Date(isoString).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 };
 
 export const getWeekDates = (fromDate: Date = new Date()): string[] => {

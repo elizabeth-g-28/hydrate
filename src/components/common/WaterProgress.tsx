@@ -102,10 +102,10 @@ export const WaterProgress = ({ percentage, size = 220, animationKey = 0 }: Wate
         className="absolute inset-0 flex flex-col items-center justify-center"
         key={animationKey}
       >
-        <span className="text-4xl font-bold text-white tabular-nums">
+        <span className="text-4xl font-bold text-white tabular-nums drop-shadow-md">
           {Math.round(percentage)}%
         </span>
-        <span className="text-sm text-hydro-text-muted mt-1">completed</span>
+        <span className="text-sm text-white/90 mt-1 drop-shadow-md">completed</span>
       </div>
     </div>
   );

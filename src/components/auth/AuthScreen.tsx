@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, Loader } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader } from 'lucide-react';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { isGoogleAuthEnabled } from '../../lib/auth';
 import { GoogleSignInButton } from './GoogleSignInButton';
@@ -47,13 +47,18 @@ export const AuthScreen = ({ mode }: AuthScreenProps) => {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-hydro-bg">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-hydro-accent/10 flex items-center justify-center">
-            <User size={32} className="text-hydro-accent" />
+          <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-[#061224] ring-2 ring-hydro-accent/25 flex items-center justify-center">
+            <img
+              src="/logo-mark.png"
+              alt=""
+              className="w-[72%] h-[72%] object-contain"
+            />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">
+          <p className="text-3xl font-bold tracking-tight text-white mb-4">Hydrate</p>
+          <h1 className="text-lg font-semibold text-white/90 mb-1">
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h1>
-          <p className="text-hydro-text-muted">
+          <p className="text-sm text-hydro-text-muted">
             {isSignUp
               ? 'Sign up to sync your data across devices'
               : 'Sign in to access your data everywhere'}

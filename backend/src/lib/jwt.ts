@@ -11,8 +11,9 @@ const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
 export const signAccessToken = (payload: TokenPayload): string =>
   jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
 
+/** 30-day sliding session — renewed on each successful /refresh */
 export const signRefreshToken = (payload: TokenPayload): string =>
-  jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
+  jwt.sign(payload, REFRESH_SECRET, { expiresIn: "30d" });
 
 export const verifyAccessToken = (token: string): TokenPayload =>
   jwt.verify(token, ACCESS_SECRET) as TokenPayload;
