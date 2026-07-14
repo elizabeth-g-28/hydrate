@@ -89,36 +89,52 @@ const apiFetch = async <T>(
   return apiFetchInner<T>(path, options, retry);
 };
 
+/** Coalesce concurrent refreshes so parallel 401s share one request */
+let refreshInFlight: Promise<boolean> | null = null;
+
 export const refreshAccessToken = async (): Promise<boolean> => {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) {
-    clearAuth();
-    return false;
-  }
+  if (refreshInFlight) return refreshInFlight;
 
-  try {
-    const response = await fetch(`${API_URL}/api/auth/refresh`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (!response.ok) {
+  refreshInFlight = (async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
       clearAuth();
       return false;
     }
 
-    const data = (await response.json()) as { accessToken: string; refreshToken?: string };
-    setAccessToken(data.accessToken);
-    if (data.refreshToken) {
-      setRefreshToken(data.refreshToken);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      // Only clear on auth failure — not on network blips
+      if (response.status === 401 || response.status === 403) {
+        clearAuth();
+        return false;
+      }
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = (await response.json()) as { accessToken: string; refreshToken?: string };
+      setAccessToken(data.accessToken);
+      if (data.refreshToken) {
+        setRefreshToken(data.refreshToken);
+      }
+      return true;
+    } catch {
+      // Offline / CORS / transient — keep tokens so session can recover
+      return false;
     }
-    return true;
-  } catch {
-    clearAuth();
-    return false;
-  }
+  })().finally(() => {
+    refreshInFlight = null;
+  });
+
+  return refreshInFlight;
 };
 
 export const register = (email: string, password: string) =>

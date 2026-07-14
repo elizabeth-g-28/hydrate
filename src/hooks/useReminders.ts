@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { useAuthStore } from '../stores/useAuthStore';
 import { useProfileStore } from '../stores/useProfileStore';
 import { useReminderStore } from '../stores/useReminderStore';
 import { useWaterStore } from '../stores/useWaterStore';
-import { sendNotification, hasPushSubscription } from '../utils/notifications';
+import { sendNotification, subscribeToPush } from '../utils/notifications';
 import { formatAmount } from '../utils/hydration';
+import { isApiEnabled } from '../lib/auth';
 
 const isInDndWindow = (dndStart: string, dndEnd: string): boolean => {
   const now = new Date();
@@ -21,13 +23,15 @@ const isInDndWindow = (dndStart: string, dndEnd: string): boolean => {
 };
 
 /**
- * In-app fallback reminders when the tab is open and push is not subscribed.
+ * In-app fallback reminders when the tab is open and push is not synced to the backend.
  * Closed-app reminders are handled by the backend push job + service worker.
  * Due: interval after last water log if any today; else after last local notification.
  */
 export const useReminders = (): void => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastNotifyAtRef = useRef<number | null>(null);
+  const user = useAuthStore((s) => s.user);
+  const sessionReady = useAuthStore((s) => s.sessionReady);
   const profile = useProfileStore((s) => s.profile);
   const settings = useReminderStore((s) => s.settings);
   const todayTotal = useWaterStore((s) => s.todayTotal);
@@ -35,8 +39,13 @@ export const useReminders = (): void => {
   const [pushReady, setPushReady] = useState(false);
 
   useEffect(() => {
-    void hasPushSubscription().then(setPushReady);
-  }, []);
+    if (!settings.enabled || !isApiEnabled() || !sessionReady || !user) {
+      void Promise.resolve().then(() => setPushReady(false));
+      return;
+    }
+    // Single subscribe path (Settings toggle may also call; coalesce shares one request)
+    void subscribeToPush().then(setPushReady);
+  }, [settings.enabled, sessionReady, user]);
 
   useEffect(() => {
     if (pushReady) {

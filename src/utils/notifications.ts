@@ -49,30 +49,66 @@ const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
   return outputArray;
 };
 
+const uint8ArraysEqual = (a: Uint8Array, b: Uint8Array): boolean => {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+};
+
+/** Coalesce concurrent subscribe calls into one request */
+let subscribeInFlight: Promise<boolean> | null = null;
+
 /** Subscribe this device for closed-app reminders and save to backend */
 export const subscribeToPush = async (): Promise<boolean> => {
-  if (!isPushSupported()) return false;
+  if (subscribeInFlight) return subscribeInFlight;
 
-  const granted = await requestNotificationPermission();
-  if (!granted) return false;
+  subscribeInFlight = (async () => {
+    if (!isPushSupported()) return false;
 
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    const existing = await registration.pushManager.getSubscription();
-    if (existing) return true;
+    const granted = await requestNotificationPermission();
+    if (!granted) return false;
 
-    const { publicKey } = await getVapidPublicKey();
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
-    });
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const { publicKey } = await getVapidPublicKey();
+      const appServerKey = urlBase64ToUint8Array(publicKey);
 
-    await savePushSubscription(subscription.toJSON());
-    return true;
-  } catch (error) {
-    console.error('Push subscribe failed:', error);
-    return false;
-  }
+      let subscription = await registration.pushManager.getSubscription();
+
+      // Existing browser sub must still be synced to the backend (prod DB).
+      // If VAPID keys changed, drop and resubscribe so pushes can be signed.
+      if (subscription) {
+        const currentKey = subscription.options.applicationServerKey;
+        const keyMatches =
+          currentKey != null &&
+          uint8ArraysEqual(new Uint8Array(currentKey), appServerKey);
+
+        if (!keyMatches) {
+          await subscription.unsubscribe();
+          subscription = null;
+        }
+      }
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: appServerKey as BufferSource,
+        });
+      }
+
+      await savePushSubscription(subscription.toJSON());
+      return true;
+    } catch (error) {
+      console.error('Push subscribe failed:', error);
+      return false;
+    }
+  })().finally(() => {
+    subscribeInFlight = null;
+  });
+
+  return subscribeInFlight;
 };
 
 export const unsubscribeFromPush = async (): Promise<void> => {

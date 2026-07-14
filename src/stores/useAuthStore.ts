@@ -107,16 +107,22 @@ export const useAuthStore = create<AuthState>()(
 
         if (!getAccessToken() && getRefreshToken()) {
           const refreshed = await refreshAccessToken();
-          if (!refreshed) {
+          // Network blip with tokens still present — keep persisted user, retry later
+          if (!refreshed && !getRefreshToken()) {
             clearSession();
             set({ user: null, loading: false, sessionReady: true });
             return;
           }
         }
 
-        if (!getAccessToken()) {
+        if (!getAccessToken() && !getRefreshToken()) {
           clearSession();
           set({ user: null, loading: false, sessionReady: true });
+          return;
+        }
+
+        if (!getAccessToken()) {
+          set({ loading: false, sessionReady: true });
           return;
         }
 
@@ -134,8 +140,15 @@ export const useAuthStore = create<AuthState>()(
               // fall through
             }
           }
-          clearSession();
-          set({ user: null, loading: false, sessionReady: true });
+
+          // Auth truly invalid (refresh cleared tokens) vs transient API failure
+          if (!getRefreshToken()) {
+            clearSession();
+            set({ user: null, loading: false, sessionReady: true });
+            return;
+          }
+
+          set({ loading: false, sessionReady: true });
         }
       },
     }),

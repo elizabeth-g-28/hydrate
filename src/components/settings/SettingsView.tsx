@@ -17,7 +17,7 @@ import { useProfileStore } from '../../stores/useProfileStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useReminderStore } from '../../stores/useReminderStore';
 import { calculateDailyGoal, formatAmount } from '../../utils/hydration';
-import { subscribeToPush, hasPushSubscription, isNotificationSupported } from '../../utils/notifications';
+import { subscribeToPush, isNotificationSupported } from '../../utils/notifications';
 import { isApiEnabled } from '../../lib/auth';
 import type { ActivityLevel, Gender, UnitSystem, Theme } from '../../types';
 import { ACTIVITY_OPTIONS } from '../../types';
@@ -35,11 +35,9 @@ export const SettingsView = () => {
 
   const handleNotificationsToggle = async (on: boolean) => {
     if (on) {
-      const hasSub = await hasPushSubscription();
-      if (!hasSub) {
-        const ok = await subscribeToPush();
-        if (!ok) return;
-      }
+      // Always (re)sync so backend has this device — required for prod push
+      const ok = await subscribeToPush();
+      if (!ok) return;
       updateSettings({ enabled: true, fixedInterval: true });
       return;
     }
@@ -165,26 +163,18 @@ export const SettingsView = () => {
       {/* Schedule */}
       <SettingsSection icon={Clock} title="Schedule">
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="wake-time" className="block text-xs text-hydro-text-muted mb-1.5 font-medium">Wake Time</label>
-            <input
-              id="wake-time"
-              type="time"
-              value={profile.wakeTime}
-              onChange={(e) => updateProfile({ wakeTime: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-sm focus:outline-none focus:ring-2 focus:ring-hydro-accent/50"
-            />
-          </div>
-          <div>
-            <label htmlFor="sleep-time" className="block text-xs text-hydro-text-muted mb-1.5 font-medium">Sleep Time</label>
-            <input
-              id="sleep-time"
-              type="time"
-              value={profile.sleepTime}
-              onChange={(e) => updateProfile({ sleepTime: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-sm focus:outline-none focus:ring-2 focus:ring-hydro-accent/50"
-            />
-          </div>
+          <TimeField
+            id="wake-time"
+            label="Wake Time"
+            value={profile.wakeTime}
+            onChange={(v) => updateProfile({ wakeTime: v })}
+          />
+          <TimeField
+            id="sleep-time"
+            label="Sleep Time"
+            value={profile.sleepTime}
+            onChange={(v) => updateProfile({ sleepTime: v })}
+          />
         </div>
       </SettingsSection>
 
@@ -225,7 +215,7 @@ export const SettingsView = () => {
           </button>
         </div>
         {settings.enabled && (
-          <div className="mt-3 space-y-1 border-l-2 border-hydro-border pl-4">
+          <div className="mt-3 space-y-1">
             <ToggleRow
               label="Hourly Reminders"
               enabled={settings.fixedInterval}
@@ -247,27 +237,19 @@ export const SettingsView = () => {
               onChange={(v) => updateSettings({ dndEnabled: v })}
             />
             {settings.dndEnabled && (
-              <div className="grid grid-cols-2 gap-3 mt-2 pl-1">
-                <div>
-                  <label htmlFor="dnd-start" className="block text-xs text-hydro-text-muted mb-1">From</label>
-                  <input
-                    id="dnd-start"
-                    type="time"
-                    value={settings.dndStart}
-                    onChange={(e) => updateSettings({ dndStart: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-sm focus:outline-none focus:ring-2 focus:ring-hydro-accent/50"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="dnd-end" className="block text-xs text-hydro-text-muted mb-1">To</label>
-                  <input
-                    id="dnd-end"
-                    type="time"
-                    value={settings.dndEnd}
-                    onChange={(e) => updateSettings({ dndEnd: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-sm focus:outline-none focus:ring-2 focus:ring-hydro-accent/50"
-                  />
-                </div>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <TimeField
+                  id="dnd-start"
+                  label="From"
+                  value={settings.dndStart}
+                  onChange={(v) => updateSettings({ dndStart: v })}
+                />
+                <TimeField
+                  id="dnd-end"
+                  label="To"
+                  value={settings.dndEnd}
+                  onChange={(v) => updateSettings({ dndEnd: v })}
+                />
               </div>
             )}
           </div>
@@ -400,6 +382,30 @@ const SettingsInput = ({ label, value, onChange, onBlur, type = 'text' }: Settin
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
       className="w-full px-3 py-2 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-sm focus:outline-none focus:ring-2 focus:ring-hydro-accent/50 transition-shadow"
+    />
+  </div>
+);
+
+interface TimeFieldProps {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}
+
+/** Mobile-friendly time control — larger tap target, 16px font (avoids iOS zoom), min-w-0 for grid */
+const TimeField = ({ id, label, value, onChange }: TimeFieldProps) => (
+  <div className="min-w-0">
+    <label htmlFor={id} className="block text-xs text-hydro-text-muted mb-1.5 font-medium">
+      {label}
+    </label>
+    <input
+      id={id}
+      type="time"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label={label}
+      className="box-border block w-full min-w-0 min-h-11 px-2.5 py-2.5 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-base leading-normal focus:outline-none focus:ring-2 focus:ring-hydro-accent/50"
     />
   </div>
 );

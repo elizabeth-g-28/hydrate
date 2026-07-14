@@ -169,7 +169,9 @@ router.get("/me", requireAuth, async (req: Request, res: Response) => {
 });
 
 router.post("/refresh", async (req: Request, res: Response) => {
-  const refreshToken = req.cookies?.refreshToken ?? req.body?.refreshToken;
+  // Prefer body (localStorage) over cookie — cross-site cookies are unreliable
+  // (Safari / Chrome third-party) and a stale cookie must not override a valid body token.
+  const refreshToken = req.body?.refreshToken ?? req.cookies?.refreshToken;
 
   if (!refreshToken) {
     res.status(401).json({ error: "No refresh token." });
