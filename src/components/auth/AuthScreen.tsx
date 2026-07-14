@@ -44,7 +44,7 @@ export const AuthScreen = ({ mode }: AuthScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-hydro-bg">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-hydro-bg pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-24 h-24 mx-auto mb-3 rounded-full overflow-hidden bg-[#061224] ring-2 ring-hydro-accent/25 flex items-center justify-center">

@@ -55,7 +55,7 @@ export const SettingsView = () => {
   };
 
   return (
-    <div className="px-4 pb-24 pt-6 max-w-lg mx-auto">
+    <div className="app-page">
       <h1 className="text-xl font-bold text-white mb-6">Settings</h1>
 
       {/* Profile Section */}
@@ -162,7 +162,7 @@ export const SettingsView = () => {
 
       {/* Schedule */}
       <SettingsSection icon={Clock} title="Schedule">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 [grid-template-columns:minmax(0,1fr)_minmax(0,1fr)]">
           <TimeField
             id="wake-time"
             label="Wake Time"
@@ -237,7 +237,7 @@ export const SettingsView = () => {
               onChange={(v) => updateSettings({ dndEnabled: v })}
             />
             {settings.dndEnabled && (
-              <div className="grid grid-cols-2 gap-3 mt-2">
+              <div className="grid grid-cols-2 gap-3 mt-2 [grid-template-columns:minmax(0,1fr)_minmax(0,1fr)]">
                 <TimeField
                   id="dnd-start"
                   label="From"
@@ -393,9 +393,13 @@ interface TimeFieldProps {
   onChange: (value: string) => void;
 }
 
-/** Mobile-friendly time control — larger tap target, 16px font (avoids iOS zoom), min-w-0 for grid */
+/**
+ * Mobile-friendly time control.
+ * Native type=time has a large intrinsic min-width (AM/PM + picker icon) that
+ * overflows half-width grid cells unless the cell and input are hard-capped.
+ */
 const TimeField = ({ id, label, value, onChange }: TimeFieldProps) => (
-  <div className="min-w-0">
+  <div className="min-w-0 max-w-full overflow-hidden">
     <label htmlFor={id} className="block text-xs text-hydro-text-muted mb-1.5 font-medium">
       {label}
     </label>
@@ -405,7 +409,7 @@ const TimeField = ({ id, label, value, onChange }: TimeFieldProps) => (
       value={value}
       onChange={(e) => onChange(e.target.value)}
       aria-label={label}
-      className="box-border block w-full min-w-0 min-h-11 px-2.5 py-2.5 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-base leading-normal focus:outline-none focus:ring-2 focus:ring-hydro-accent/50"
+      className="box-border block w-full max-w-full min-w-0 min-h-11 px-2 py-2.5 rounded-lg bg-hydro-bg border border-hydro-border text-hydro-text text-base leading-normal focus:outline-none focus:ring-2 focus:ring-hydro-accent/50 [&::-webkit-calendar-picker-indicator]:ms-0 [&::-webkit-calendar-picker-indicator]:max-w-5"
     />
   </div>
 );

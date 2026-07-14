@@ -179,7 +179,9 @@ router.post("/refresh", async (req: Request, res: Response) => {
   }
 
   try {
-    const payload = verifyRefreshToken(refreshToken);
+    const decoded = verifyRefreshToken(refreshToken);
+    // Must not pass iat/exp back into jwt.sign — expiresIn throws if exp is already set
+    const payload = { userId: decoded.userId, email: decoded.email };
     const newAccessToken = signAccessToken(payload);
     const newRefreshToken = signRefreshToken(payload);
 

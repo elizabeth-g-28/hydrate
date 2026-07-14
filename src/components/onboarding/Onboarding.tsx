@@ -57,7 +57,15 @@ export const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-hydro-bg">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center bg-hydro-bg"
+      style={{
+        paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+        paddingLeft: 'max(1.5rem, env(safe-area-inset-left))',
+        paddingRight: 'max(1.5rem, env(safe-area-inset-right))',
+      }}
+    >
       {/* Progress dots */}
       <div className="flex gap-2 mb-8" role="progressbar" aria-valuenow={currentIndex + 1} aria-valuemax={STEPS.length}>
         {STEPS.map((s, i) => (

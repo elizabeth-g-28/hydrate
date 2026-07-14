@@ -59,7 +59,7 @@ export const AnalyticsView = () => {
   );
 
   return (
-    <div className="px-4 pb-24 pt-6 max-w-lg mx-auto">
+    <div className="app-page">
       <div className="flex items-center gap-2 mb-6">
         <BarChart3 size={20} className="text-hydro-accent" />
         <h1 className="text-xl font-bold text-white">Analytics</h1>

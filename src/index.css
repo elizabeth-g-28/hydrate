@@ -83,4 +83,26 @@
   .glass-card {
     @apply bg-hydro-card/80 backdrop-blur-xl border border-hydro-border/50 rounded-2xl;
   }
+
+  /* Main tab screens — clears notch, home indicator, and bottom nav */
+  .app-page {
+    @apply px-4 max-w-lg mx-auto;
+    padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+    padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+  }
+}
+
+@layer utilities {
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .safe-area-px {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
 }

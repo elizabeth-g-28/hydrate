@@ -84,19 +84,6 @@ const formatAmount = (ml: number): string => {
   return `${ml}ml`;
 };
 
-const isHourlyDue = (
-  intervalMs: number,
-  now: Date,
-  lastIntakeAt: Date | null,
-  lastPushAt: Date | null
-): boolean => {
-  if (lastIntakeAt) {
-    return now.getTime() - lastIntakeAt.getTime() >= intervalMs;
-  }
-  if (!lastPushAt) return true;
-  return now.getTime() - lastPushAt.getTime() >= intervalMs;
-};
-
 type PushPayload = { title: string; body: string; url: string };
 
 const sendToUserSubs = async (
@@ -167,8 +154,7 @@ export const dispatchReminderPushes = async (): Promise<void> => {
     const today = getDateStringInTimeZone(timeZone, now);
     const entries = await prisma.waterEntry.findMany({
       where: { userId: user.id, date: today },
-      select: { amount: true, timestamp: true },
-      orderBy: { timestamp: "desc" },
+      select: { amount: true },
     });
 
     const todayTotal = entries.reduce((sum, e) => sum + e.amount, 0);
@@ -218,12 +204,14 @@ export const dispatchReminderPushes = async (): Promise<void> => {
       }
     }
 
-    // Hourly / fixed interval
+    // Hourly / fixed interval — cadence from lastPushAt (not last water log)
     if (!settings.fixedInterval) continue;
 
-    const lastIntakeAt = entries[0]?.timestamp ?? null;
     const intervalMs = settings.intervalMinutes * 60 * 1000;
-    if (!isHourlyDue(intervalMs, now, lastIntakeAt, settings.lastPushAt)) {
+    if (
+      settings.lastPushAt &&
+      now.getTime() - settings.lastPushAt.getTime() < intervalMs
+    ) {
       continue;
     }
 

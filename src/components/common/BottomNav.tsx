@@ -10,11 +10,11 @@ const NAV_ITEMS = [
 
 export const BottomNav = () => (
   <nav
-    className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-hydro-border/50 safe-area-pb"
+    className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-hydro-border/50 pb-[env(safe-area-inset-bottom,0px)]"
     role="navigation"
     aria-label="Main navigation"
   >
-    <div className="flex items-center justify-around max-w-lg mx-auto px-2 py-1">
+    <div className="flex items-center justify-around max-w-lg mx-auto px-2 pt-1 pb-1.5">
       {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
         <NavLink
           key={to}

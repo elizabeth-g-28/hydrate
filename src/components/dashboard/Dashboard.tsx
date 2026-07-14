@@ -44,7 +44,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="px-4 pb-24 pt-6 max-w-lg mx-auto">
+    <div className="app-page">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
