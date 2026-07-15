@@ -17,8 +17,9 @@ import { useProfileStore } from '../../stores/useProfileStore';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useReminderStore } from '../../stores/useReminderStore';
 import { calculateDailyGoal, formatAmount } from '../../utils/hydration';
-import { subscribeToPush, isNotificationSupported } from '../../utils/notifications';
+import { subscribeToPush, isNotificationSupported, sendNotification } from '../../utils/notifications';
 import { isApiEnabled } from '../../lib/auth';
+import { sendTestPush } from '../../lib/api';
 import type { ActivityLevel, Gender, UnitSystem, Theme } from '../../types';
 import { ACTIVITY_OPTIONS } from '../../types';
 
@@ -27,6 +28,8 @@ export const SettingsView = () => {
   const { profile, updateProfile } = useProfileStore();
   const { settings, updateSettings } = useReminderStore();
   const { signOut } = useAuthStore();
+  const [testPushState, setTestPushState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
+  const [testPushError, setTestPushError] = useState<string | null>(null);
 
   if (!profile) return null;
 
@@ -42,6 +45,24 @@ export const SettingsView = () => {
       return;
     }
     updateSettings({ enabled: false });
+  };
+
+  const handleTestNotification = async () => {
+    setTestPushState('sending');
+    setTestPushError(null);
+    try {
+      sendNotification(
+        '💧 Hydrate test',
+        'Local notification works on this device.',
+        'hydro-test-local'
+      );
+      const { message } = await sendTestPush();
+      setTestPushState('ok');
+      console.info('[hydrate]', message);
+    } catch (error) {
+      setTestPushState('error');
+      setTestPushError(error instanceof Error ? error.message : 'Test push failed');
+    }
   };
 
   const handleRecalculateGoal = () => {
@@ -251,6 +272,25 @@ export const SettingsView = () => {
                   onChange={(v) => updateSettings({ dndEnd: v })}
                 />
               </div>
+            )}
+            <button
+              type="button"
+              onClick={() => void handleTestNotification()}
+              tabIndex={0}
+              aria-label="Send test notification"
+              disabled={!notificationsAvailable || testPushState === 'sending'}
+              className="mt-3 w-full px-4 py-2.5 rounded-lg border border-hydro-border text-sm font-medium text-hydro-text hover:border-hydro-accent/50 transition-colors disabled:opacity-50"
+            >
+              {testPushState === 'sending'
+                ? 'Sending test…'
+                : testPushState === 'ok'
+                  ? 'Test sent — check notification'
+                  : 'Send test notification'}
+            </button>
+            {testPushError && (
+              <p className="mt-1.5 text-xs text-hydro-danger" role="alert">
+                {testPushError}
+              </p>
             )}
           </div>
         )}

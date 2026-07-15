@@ -13,16 +13,36 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   return permission === 'granted';
 };
 
+/** Prefer SW notifications — `new Notification` is unreliable on mobile PWAs */
 export const sendNotification = (title: string, body: string, tag?: string): void => {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
 
-  new Notification(title, {
+  const options: NotificationOptions = {
     body,
     icon: '/icon-192.png',
     badge: '/icon-192.png',
     tag: tag ?? 'hydro-reminder',
     requireInteraction: false,
-  });
+  };
+
+  if ('serviceWorker' in navigator) {
+    void navigator.serviceWorker.ready
+      .then((registration) => registration.showNotification(title, options))
+      .catch(() => {
+        try {
+          new Notification(title, options);
+        } catch {
+          // ignore
+        }
+      });
+    return;
+  }
+
+  try {
+    new Notification(title, options);
+  } catch {
+    // ignore
+  }
 };
 
 export const isNotificationSupported = (): boolean => 'Notification' in window;
@@ -57,7 +77,6 @@ const uint8ArraysEqual = (a: Uint8Array, b: Uint8Array): boolean => {
   return true;
 };
 
-/** Coalesce concurrent subscribe calls into one request */
 let subscribeInFlight: Promise<boolean> | null = null;
 
 /** Subscribe this device for closed-app reminders and save to backend */
@@ -77,12 +96,11 @@ export const subscribeToPush = async (): Promise<boolean> => {
 
       let subscription = await registration.pushManager.getSubscription();
 
-      // Existing browser sub must still be synced to the backend (prod DB).
-      // If VAPID keys changed, drop and resubscribe so pushes can be signed.
       if (subscription) {
         const currentKey = subscription.options.applicationServerKey;
+        // Mobile browsers often omit applicationServerKey — keep & re-sync
         const keyMatches =
-          currentKey != null &&
+          currentKey == null ||
           uint8ArraysEqual(new Uint8Array(currentKey), appServerKey);
 
         if (!keyMatches) {
@@ -123,7 +141,7 @@ export const unsubscribeFromPush = async (): Promise<void> => {
   try {
     await removePushSubscription(endpoint);
   } catch {
-    // Ignore if already removed server-side
+    // ignore
   }
 };
 

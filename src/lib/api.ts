@@ -254,6 +254,10 @@ export const removePushSubscription = (endpoint: string) =>
     body: JSON.stringify({ endpoint }),
   });
 
+/** Immediate push to this user's devices — verify mobile PWA delivery */
+export const sendTestPush = () =>
+  apiFetch<{ message: string }>("/api/push/test", { method: "POST" });
+
 export const hydrateFromApi = (() => {
   let inFlight: Promise<void> | null = null;
 

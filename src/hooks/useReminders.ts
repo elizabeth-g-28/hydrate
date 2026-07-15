@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useProfileStore } from '../stores/useProfileStore';
 import { useReminderStore } from '../stores/useReminderStore';
@@ -23,9 +23,8 @@ const isInDndWindow = (dndStart: string, dndEnd: string): boolean => {
 };
 
 /**
- * In-app fallback reminders when the tab is open and push is not synced to the backend.
- * Closed-app reminders are handled by the backend push job + service worker.
- * Due: every intervalMinutes while enabled (not tied to last water log).
+ * Local interval while the JS runtime is alive (app open).
+ * Closed-app delivery is backend Web Push — no visibility gating (same idea as pre-32e3247).
  */
 export const useReminders = (): void => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -34,22 +33,14 @@ export const useReminders = (): void => {
   const profile = useProfileStore((s) => s.profile);
   const settings = useReminderStore((s) => s.settings);
   const todayTotal = useWaterStore((s) => s.todayTotal);
-  const [pushReady, setPushReady] = useState(false);
 
+  // Sync push for closed-app reminders (does not turn off local timers)
   useEffect(() => {
-    if (!settings.enabled || !isApiEnabled() || !sessionReady || !user) {
-      void Promise.resolve().then(() => setPushReady(false));
-      return;
-    }
-    void subscribeToPush().then(setPushReady);
+    if (!settings.enabled || !isApiEnabled() || !sessionReady || !user) return;
+    void subscribeToPush();
   }, [settings.enabled, sessionReady, user]);
 
   useEffect(() => {
-    if (pushReady) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      return;
-    }
-
     if (!profile?.onboardingComplete || !settings.enabled || !settings.fixedInterval) {
       if (intervalRef.current) clearInterval(intervalRef.current);
       return;
@@ -77,5 +68,5 @@ export const useReminders = (): void => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [profile, settings, todayTotal, pushReady]);
+  }, [profile, settings, todayTotal]);
 };

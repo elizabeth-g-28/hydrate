@@ -176,9 +176,10 @@ export const dispatchReminderPushes = async (): Promise<void> => {
         url: "/home",
       });
       if (sent) {
+        // Do not touch lastPushAt — keep hourly cadence independent (pre-32e3247 behavior)
         await prisma.reminderSettings.update({
           where: { userId: user.id },
-          data: { lastMorningBoostAt: now, lastPushAt: now },
+          data: { lastMorningBoostAt: now },
         });
         continue;
       }
@@ -198,7 +199,7 @@ export const dispatchReminderPushes = async (): Promise<void> => {
       if (sent) {
         await prisma.reminderSettings.update({
           where: { userId: user.id },
-          data: { lastEveningWinddownAt: now, lastPushAt: now },
+          data: { lastEveningWinddownAt: now },
         });
         continue;
       }
